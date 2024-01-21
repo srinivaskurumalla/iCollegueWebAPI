@@ -49,6 +49,13 @@ namespace iCollegueWebAPI.Models
                     .HasMaxLength(255)
                     .IsUnicode(false)
                     .HasColumnName("filePath");
+
+                entity.Property(e => e.QuestionId).HasColumnName("questionId");
+
+                entity.HasOne(d => d.Question)
+                    .WithMany(p => p.FileTables)
+                    .HasForeignKey(d => d.QuestionId)
+                    .HasConstraintName("FK__FileTable__quest__534D60F1");
             });
 
             modelBuilder.Entity<TblKnowledgeBase>(entity =>

@@ -13,32 +13,21 @@ namespace iCollegueWebAPI.Repositories
             _dbContext = dbContext;
         }
 
-        public async Task<int> CreateFile(FileTable obj)
+        public KnowledgeBaseRepo()
         {
-           if(obj == null)
-            {
-                return -1;
-            }
-            else
-            {
-                // #To-do  #need to check whethe query is already available in db
-               // var queryExists = _dbContext.TblKnowledgeBases.Any(k  => k.Id == obj.Id);
-               _dbContext.Add(obj);
-                await _dbContext.SaveChangesAsync();
-                return obj.FileId;
-            }
         }
+
         public async Task<int> Create(TblKnowledgeBase obj)
         {
-           if(obj == null)
+            if (obj == null)
             {
                 return -1;
             }
             else
             {
                 // #To-do  #need to check whethe query is already available in db
-               // var queryExists = _dbContext.TblKnowledgeBases.Any(k  => k.Id == obj.Id);
-               _dbContext.Add(obj);
+                // var queryExists = _dbContext.TblKnowledgeBases.Any(k  => k.Id == obj.Id);
+                _dbContext.Add(obj);
                 await _dbContext.SaveChangesAsync();
                 return obj.Id;
             }
@@ -46,13 +35,18 @@ namespace iCollegueWebAPI.Repositories
 
         public async Task<IEnumerable<TblKnowledgeBase>> GetAll()
         {
-           return await _dbContext.TblKnowledgeBases.ToListAsync();
+            return await _dbContext.TblKnowledgeBases.ToListAsync();
         }
 
         public async Task<TblKnowledgeBase?> GetQueryById(int id)
         {
-           var result =  await _dbContext.TblKnowledgeBases.FirstOrDefaultAsync(x => x.Id == id);
-            if(result == null)
+            var result = await _dbContext.TblKnowledgeBases.FirstOrDefaultAsync(x => x.Id == id);
+
+           /* var result = _dbContext.TblKnowledgeBases
+                                .Include(kb => kb.FileTables) // Include the related files
+                                .FirstOrDefault(kb => kb.Id == id);
+*/
+            if (result == null)
             {
                 return null;
             }
@@ -61,12 +55,30 @@ namespace iCollegueWebAPI.Repositories
                 return result;
             }
         }
-
-       /* public async Task<int> SaveKnowledgeBaseRecord(TblKnowledgeBase knowledgeBase)
+           public async Task<dynamic?> GetQueryAndFilesById(int id)
         {
-            _dbContext.TblKnowledgeBases.Add(knowledgeBase);
-            await _dbContext.SaveChangesAsync();
-            return knowledgeBase.Id;
-        }*/
+            //  var result = await _dbContext.TblKnowledgeBases.FirstOrDefaultAsync(x => x.Id == id);
+
+            var result = _dbContext.TblKnowledgeBases
+                                .Include(kb => kb.FileTables) // Include the related files
+                                .FirstOrDefault(kb => kb.Id == id);
+
+            if (result == null)
+            {
+                return null;
+            }
+            else
+            {
+                var knowledgeBaseWithFiles = new KnowledgeBaseWithFiles
+                {
+                    KnowledgeBase = result,
+                    FileTables = result.FileTables?.ToList() ?? new List<FileTable>() // Ensure the collection is materialized
+
+                };
+                return knowledgeBaseWithFiles;
+            }
+        }
+
+
     }
 }

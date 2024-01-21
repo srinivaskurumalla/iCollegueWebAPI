@@ -9,5 +9,8 @@ namespace iCollegueWebAPI.Models
         public string? FileName { get; set; }
         public string? FilePath { get; set; }
         public byte[]? FileContent { get; set; }
+        public int? QuestionId { get; set; }
+
+        public virtual TblKnowledgeBase? Question { get; set; }
     }
 }

@@ -7,6 +7,7 @@ namespace iCollegueWebAPI.Interfaces
         Task<IEnumerable<T>> GetAll();
 
         Task<T?> GetQueryById(int id);
+       // Task<T?> GetQueryAndFilesById(int id);
         Task<int> Create(T obj);
       //  Task<int> CreateFile(T obj);
     }

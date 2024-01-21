@@ -14,8 +14,8 @@ namespace iCollegueWebAPI.Controllers
     public class KnowledgeBaseController : ControllerBase
     {
         private readonly IKnowledgeBase<TblKnowledgeBase> _knowledgeBaseRepo;
-        /*        private readonly KnowledgeBaseRepo knowledgeBaseRepo1;
-        */        //private readonly IKnowledgeBaseService _knowledgeBaseService;
+        private readonly KnowledgeBaseRepo _knowledgeBase;
+       
         private readonly iColleagueContext _iColleagueContext;
 
         /*  public KnowledgeBaseController(IKnowledgeBase<TblKnowledgeBase> knowledgeBaseRepo)
@@ -36,15 +36,27 @@ namespace iCollegueWebAPI.Controllers
 
 
         [HttpGet("GetAllData")]
-        public async Task<IActionResult> GetAllUsers()
+        public async Task<IActionResult> GetAllData()
         {
             var data = await _knowledgeBaseRepo.GetAll();
             return Ok(data);
         }
         [HttpGet("GetById/{id}")]
-        public async Task<IActionResult> GetAllUsers(int id)
+        public async Task<IActionResult> GetQueryById(int id)
         {
             var result = await _knowledgeBaseRepo.GetQueryById(id);
+            if (result != null)
+            {
+                return Ok(result);
+            }
+            else
+            {
+                return NotFound();
+            }
+        }  [HttpGet("GetQueryAndFilesById/{id}")]
+        public async Task<IActionResult> GetQueryAndFilesById(int id)
+        {
+            var result = await _knowledgeBase.GetQueryAndFilesById(id);
             if (result != null)
             {
                 return Ok(result);
@@ -69,7 +81,7 @@ namespace iCollegueWebAPI.Controllers
         }
 
         [HttpPost("UploadFile")]
-        public async Task<IActionResult> UploadFileAsync(IFormFile file)
+        public async Task<IActionResult> UploadFileAsync(IFormFile file,int queryId)
         {
             if (file == null || file.Length == 0)
                 return BadRequest("Invalid file");
@@ -81,7 +93,7 @@ namespace iCollegueWebAPI.Controllers
 
                 // Save fileBytes to SQL Server using Entity Framework or another data access method
                 // Example:
-                var newFile = new FileTable { FileContent = fileBytes, FileName = file.FileName };
+                var newFile = new FileTable { FileContent = fileBytes, FileName = file.FileName ,QuestionId = queryId};
                 _iColleagueContext.FileTables.Add(newFile);
                 await _iColleagueContext.SaveChangesAsync();
             }
@@ -112,15 +124,7 @@ namespace iCollegueWebAPI.Controllers
             // Return the file content as a FileStreamResult with content type
             return File(fileEntity.FileContent, contentType, fileEntity.FileName);
         }
-        // Assuming YourFileEntity has a 'Content' property of type byte[] to store file content
-        //byte[] fileContent = fileEntity.FileContent;
-
-        // You may need to determine the file content type and set the appropriate response headers
-        // For example, if it's a PDF file:
-        // Response.Headers.Add("Content-Type", "application/pdf");
-
-        // Return the file content as a FileStreamResult
-        //return File(fileContent, "application/octet-stream", fileEntity.FileName);
+      
 
 
         [NonAction]
