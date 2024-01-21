@@ -16,6 +16,7 @@ namespace iCollegueWebAPI.Models
         {
         }
 
+        public virtual DbSet<FileTable> FileTables { get; set; } = null!;
         public virtual DbSet<TblKnowledgeBase> TblKnowledgeBases { get; set; } = null!;
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
@@ -28,6 +29,28 @@ namespace iCollegueWebAPI.Models
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            modelBuilder.Entity<FileTable>(entity =>
+            {
+                entity.HasKey(e => e.FileId)
+                    .HasName("PK__FileTabl__C2C6FFDC5B4CEFB2");
+
+                entity.ToTable("FileTable");
+
+                entity.Property(e => e.FileId).HasColumnName("fileId");
+
+                entity.Property(e => e.FileContent).HasColumnName("fileContent");
+
+                entity.Property(e => e.FileName)
+                    .HasMaxLength(255)
+                    .IsUnicode(false)
+                    .HasColumnName("fileName");
+
+                entity.Property(e => e.FilePath)
+                    .HasMaxLength(255)
+                    .IsUnicode(false)
+                    .HasColumnName("filePath");
+            });
+
             modelBuilder.Entity<TblKnowledgeBase>(entity =>
             {
                 entity.ToTable("tblKnowledgeBase");

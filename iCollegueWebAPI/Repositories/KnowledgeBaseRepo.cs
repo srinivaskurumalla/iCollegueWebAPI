@@ -13,6 +13,21 @@ namespace iCollegueWebAPI.Repositories
             _dbContext = dbContext;
         }
 
+        public async Task<int> CreateFile(FileTable obj)
+        {
+           if(obj == null)
+            {
+                return -1;
+            }
+            else
+            {
+                // #To-do  #need to check whethe query is already available in db
+               // var queryExists = _dbContext.TblKnowledgeBases.Any(k  => k.Id == obj.Id);
+               _dbContext.Add(obj);
+                await _dbContext.SaveChangesAsync();
+                return obj.FileId;
+            }
+        }
         public async Task<int> Create(TblKnowledgeBase obj)
         {
            if(obj == null)

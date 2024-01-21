@@ -8,6 +8,7 @@ namespace iCollegueWebAPI.Interfaces
 
         Task<T?> GetQueryById(int id);
         Task<int> Create(T obj);
+      //  Task<int> CreateFile(T obj);
     }
   
 }
