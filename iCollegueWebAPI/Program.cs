@@ -1,7 +1,9 @@
+using iCollegueWebAPI.DTO;
 using iCollegueWebAPI.Interfaces;
 using iCollegueWebAPI.Models;
 using iCollegueWebAPI.Repositories;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -19,8 +21,15 @@ builder.Services.AddCors(options =>
 });
 // Add services to the container.
 builder.Services.AddScoped<IKnowledgeBase<TblKnowledgeBase>, KnowledgeBaseRepo>();
+builder.Services.AddScoped<IKnowledgeBaseWithFilesDto<KnowledgeBaseDto>, KnowledgeBaseRepo>();
 
 
+/*builder.Services.AddControllers()
+        .AddJsonOptions(options =>
+        {
+            options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.Preserve;
+        });
+*/
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();

@@ -1,11 +1,8 @@
-﻿using iCollegueWebAPI.DTO;
-using iCollegueWebAPI.Interfaces;
+﻿using iCollegueWebAPI.Interfaces;
 using iCollegueWebAPI.Models;
-using iCollegueWebAPI.Repositories;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using System.Net.Http.Headers;
+using Image = System.Drawing.Image;
 
 namespace iCollegueWebAPI.Controllers
 {
@@ -14,20 +11,18 @@ namespace iCollegueWebAPI.Controllers
     public class KnowledgeBaseController : ControllerBase
     {
         private readonly IKnowledgeBase<TblKnowledgeBase> _knowledgeBaseRepo;
-        private readonly KnowledgeBaseRepo _knowledgeBase;
-       
+        private readonly IKnowledgeBaseWithFilesDto<KnowledgeBaseDto> _knowledgeBaseWithFilesRepo;
         private readonly iColleagueContext _iColleagueContext;
 
-        /*  public KnowledgeBaseController(IKnowledgeBase<TblKnowledgeBase> knowledgeBaseRepo)
-          {
-              _knowledgeBaseRepo = knowledgeBaseRepo;
-          }*/
-
-        public KnowledgeBaseController(IKnowledgeBase<TblKnowledgeBase> knowledgeBaseRepo, iColleagueContext _iColleagueContext)
+        public KnowledgeBaseController(IKnowledgeBase<TblKnowledgeBase> knowledgeBaseRepo, IKnowledgeBaseWithFilesDto<KnowledgeBaseDto> knowledgeBaseWithFilesRepo, iColleagueContext colleagueContext)
         {
             _knowledgeBaseRepo = knowledgeBaseRepo;
-            this._iColleagueContext = _iColleagueContext;
+            _knowledgeBaseWithFilesRepo = knowledgeBaseWithFilesRepo;
+            _iColleagueContext = colleagueContext;
         }
+
+
+
 
 
 
@@ -41,6 +36,17 @@ namespace iCollegueWebAPI.Controllers
             var data = await _knowledgeBaseRepo.GetAll();
             return Ok(data);
         }
+        [HttpGet("GetAllQueriesWithFiles")]
+        public async Task<IActionResult> GetAllQueriesWithFiles()
+        {
+            var data = await _knowledgeBaseWithFilesRepo.GetAllQueriesAndFiles();
+            if(data !=  null)
+            {
+                return Ok(data);
+
+            }
+            else { return NotFound(); }
+        }
         [HttpGet("GetById/{id}")]
         public async Task<IActionResult> GetQueryById(int id)
         {
@@ -53,19 +59,29 @@ namespace iCollegueWebAPI.Controllers
             {
                 return NotFound();
             }
-        }  [HttpGet("GetQueryAndFilesById/{id}")]
-        public async Task<IActionResult> GetQueryAndFilesById(int id)
+        } 
+        [HttpGet("GetQueryAndFilesById/{id}")]
+        public async Task<ActionResult<KnowledgeBaseDto>> GetQueryAndFilesById(int id)
         {
-            var result = await _knowledgeBase.GetQueryAndFilesById(id);
-            if (result != null)
+            try
             {
-                return Ok(result);
+                var result = await _knowledgeBaseWithFilesRepo.GetQueryAndFilesById(id);
+                if (result != null)
+                {
+                    return Ok(result);
+                }
+                else
+                {
+                    return NotFound();
+                }
             }
-            else
+            catch (Exception ex)
             {
-                return NotFound();
+                // Log or handle the exception
+                return StatusCode(500, "Internal Server Error"+ex);
             }
         }
+
         [HttpPost("PostQuery")]
         public async Task<IActionResult> PostQuery([FromBody] TblKnowledgeBase tblKnowledgeBase)
         {
@@ -112,7 +128,11 @@ namespace iCollegueWebAPI.Controllers
 
             // Determine content type based on file extension
             var contentType = GetContentType(fileEntity.FileName);
-
+            if(contentType == "jpeg" || contentType == "png" || contentType == "jpg")
+            {
+                var fileContentString = fileEntity.FileContent.ToString();
+                DisplayImage(fileContentString);
+            }
             // Set Content-Disposition header to suggest a filename for the downloaded file
             var contentDisposition = new ContentDispositionHeaderValue("attachment")
             {
@@ -155,6 +175,48 @@ namespace iCollegueWebAPI.Controllers
 
             // Default to binary/octet-stream if the extension is not recognized
             return "application/octet-stream";
+        }
+        //   [HttpGet("GetImageFromBytes/{base64Image}")]
+        [NonAction]
+        public IActionResult DisplayImage(string base64Image)
+        {
+            try
+            {
+                byte[] imageBytes = Convert.FromBase64String(base64Image);
+                Image image = ByteArrayToImage(imageBytes);
+
+                if (image != null)
+                {
+                    using (MemoryStream ms = new MemoryStream())
+                    {
+                        // Convert Image to byte[] and send it as a response
+                        image.Save(ms, System.Drawing.Imaging.ImageFormat.Jpeg);
+                        return File(ms.ToArray(), "image/jpeg");
+                    }
+                }
+
+                // Return a placeholder image or handle the case where the conversion fails
+                return File(new byte[0], "image/jpeg");
+            }
+            catch (FormatException)
+            {
+                // Handle invalid base64 string
+                return BadRequest("Invalid base64 string");
+            }
+        }
+
+
+        private static Image ByteArrayToImage(byte[] byteArray)
+        {
+            if (byteArray == null || byteArray.Length == 0)
+            {
+                return null;
+            }
+
+            using (MemoryStream stream = new MemoryStream(byteArray))
+            {
+                return Image.FromStream(stream);
+            }
         }
     }
 }

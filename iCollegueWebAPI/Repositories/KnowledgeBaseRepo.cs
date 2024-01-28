@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace iCollegueWebAPI.Repositories
 {
-    public class KnowledgeBaseRepo : IKnowledgeBase<TblKnowledgeBase>
+    public class KnowledgeBaseRepo : IKnowledgeBase<TblKnowledgeBase>, IKnowledgeBaseWithFilesDto<KnowledgeBaseDto>
     {
         private readonly iColleagueContext _dbContext;
 
@@ -13,9 +13,6 @@ namespace iCollegueWebAPI.Repositories
             _dbContext = dbContext;
         }
 
-        public KnowledgeBaseRepo()
-        {
-        }
 
         public async Task<int> Create(TblKnowledgeBase obj)
         {
@@ -42,10 +39,10 @@ namespace iCollegueWebAPI.Repositories
         {
             var result = await _dbContext.TblKnowledgeBases.FirstOrDefaultAsync(x => x.Id == id);
 
-           /* var result = _dbContext.TblKnowledgeBases
-                                .Include(kb => kb.FileTables) // Include the related files
-                                .FirstOrDefault(kb => kb.Id == id);
-*/
+            /* var result = _dbContext.TblKnowledgeBases
+                                 .Include(kb => kb.FileTables) // Include the related files
+                                 .FirstOrDefault(kb => kb.Id == id);
+ */
             if (result == null)
             {
                 return null;
@@ -55,13 +52,56 @@ namespace iCollegueWebAPI.Repositories
                 return result;
             }
         }
-           public async Task<dynamic?> GetQueryAndFilesById(int id)
-        {
-            //  var result = await _dbContext.TblKnowledgeBases.FirstOrDefaultAsync(x => x.Id == id);
+        /*           public async Task<dynamic?> GetQueryAndFilesById(int id)
+                {
+                    //  var result = await _dbContext.TblKnowledgeBases.FirstOrDefaultAsync(x => x.Id == id);
 
-            var result = _dbContext.TblKnowledgeBases
-                                .Include(kb => kb.FileTables) // Include the related files
-                                .FirstOrDefault(kb => kb.Id == id);
+                    var result = _dbContext.TblKnowledgeBases
+                                        .Include(kb => kb.FileTables) // Include the related files
+                                        .FirstOrDefault(kb => kb.Id == id);
+
+                    if (result == null)
+                    {
+                        return null;
+                    }
+                    else
+                    {
+                        var knowledgeBaseWithFiles = new KnowledgeBaseWithFiles
+                        {
+                            KnowledgeBase = result,
+                            FileTables = result.FileTables?.ToList() ?? new List<FileTable>() // Ensure the collection is materialized
+
+                        };
+                        return knowledgeBaseWithFiles;
+                    }
+                }
+        */
+        public async Task<KnowledgeBaseDto?> GetQueryAndFilesById(int id)
+        {
+
+            // var result = await _dbContext.TblKnowledgeBases.Include(x => x.FileTables).FirstOrDefaultAsync(x => x.Id == id);
+
+            var result = await _dbContext.TblKnowledgeBases
+                                                     .Include(x => x.FileTables)
+                                                     .Select(kb => new KnowledgeBaseDto
+                                                     {
+                                                         Id = kb.Id,
+                                                         Question = kb.Question,
+                                                         Answer = kb.Answer,
+                                                         Description = kb.Description,
+                                                         FileTables = kb.FileTables.Select(ft => new FileTable
+                                                         {
+                                                             FileId = ft.FileId,
+                                                             FileName = ft.FileName,
+                                                             FilePath = ft.FilePath,
+                                                             FileContent = ft.FileContent,
+                                                             // Map other properties as needed
+                                                         }).ToList()
+                                                     })
+                                                     .FirstOrDefaultAsync(x => x.Id == id);
+
+            // Filter out nested FileTables in the question property
+           // result?.FileTables.ForEach(ft => ft.Question.FileTables = null);
 
             if (result == null)
             {
@@ -69,16 +109,36 @@ namespace iCollegueWebAPI.Repositories
             }
             else
             {
-                var knowledgeBaseWithFiles = new KnowledgeBaseWithFiles
-                {
-                    KnowledgeBase = result,
-                    FileTables = result.FileTables?.ToList() ?? new List<FileTable>() // Ensure the collection is materialized
-
-                };
-                return knowledgeBaseWithFiles;
+                /* var kbf = new KnowledgeBaseDto
+                 {
+                     KnowledgeBaseDto = result,
+                     FileTables = result.FileTables.ToList()
+                 };
+                 return kbf;*/
+                return result;
             }
+
+            
         }
 
+        public async Task<IEnumerable<KnowledgeBaseDto?>> GetAllQueriesAndFiles()
+        {
+            return await _dbContext.TblKnowledgeBases.Include(x => x.FileTables)
+                                                      .Select(kb => new KnowledgeBaseDto
+                                                      {
+                                                          Id = kb.Id,
+                                                          Question = kb.Question,
+                                                          Answer = kb.Answer,
+                                                          Description = kb.Description,
+                                                          FileTables = kb.FileTables.Select(ft => new FileTable
+                                                          {
+                                                              FileId = ft.FileId,
+                                                              FileName = ft.FileName,
+                                                              FilePath = ft.FilePath,
+                                                              FileContent = ft.FileContent,
+                                                          }).ToList(),
+                                                      }).ToListAsync();
 
+        }
     }
 }
