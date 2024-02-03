@@ -1,7 +1,7 @@
 ﻿using iCollegueWebAPI.Interfaces;
 using iCollegueWebAPI.Models;
 using Microsoft.AspNetCore.Mvc;
-using System.Net.Http.Headers;
+ using System.Net.Http.Headers;
 using Image = System.Drawing.Image;
 
 namespace iCollegueWebAPI.Controllers
